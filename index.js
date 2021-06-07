@@ -22,9 +22,12 @@ async function main() {
                     ['w1', 'w2'],
                     hobbies[i % hobbies.length],
                 ],
+                nothing: [],
+                favColor: '#ff0000',
                 details: {
                     lastName: 'lincoln',
                     isMarried: true,
+                    likesBlackOlives: false,
                 },
             },
         };

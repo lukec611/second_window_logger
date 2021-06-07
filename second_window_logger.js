@@ -27,14 +27,14 @@ function renderJson(obj) {
 
 function * toLines(key, obj, indentation = 0, prefix2 = '') {
     if (typeof obj !== 'object') {
-        const prefix = key ? `${key}: ` : '';
-        yield ({ indentation, v: `${prefix2}${prefix}${JSON.stringify(obj)}` });    
+        const prefix = key ? `${colorit(key, 'blue')}: ` : '';
+        yield ({ indentation, v: `${prefix2}${prefix}${colorVal(obj)}` });    
         return;
     }
-    key && (yield ({ indentation: indentation-1, v: `${key}:`, color: 'blue' }));
+    key && (yield ({ indentation: indentation-1, v: `${colorit(key, 'blue')}:` }));
     if (Array.isArray(obj)) {
         for (const item of obj) {
-            yield * toLines(undefined, item, indentation+1, prefix2);
+            yield * toLines(undefined, item, indentation, prefix2);
         }
         return;
     }
@@ -42,7 +42,12 @@ function * toLines(key, obj, indentation = 0, prefix2 = '') {
         const valueType = typeof value;
         if (valueType === 'object') {
             if (Array.isArray(value)) {
-                yield * toLines(key, value, indentation+1, '-');
+                if (value.length)
+                    yield * toLines(key, value, indentation+1, '-');
+                else {
+                    const prefix = key ? `${colorit(key, 'blue')}: ` : '';
+                    yield ({ indentation, v: `${prefix2}${prefix}${colorVal(value)}` });    
+                }
             } else {
                 yield * toLines(key, value, indentation+1);
             }
@@ -50,4 +55,23 @@ function * toLines(key, obj, indentation = 0, prefix2 = '') {
             yield * toLines(key, value, indentation);
         }
     }
+}
+
+function colorVal(item) {
+    if (typeof item === 'boolean') {
+        return colorit(item, item ? 'green' : 'red');
+    } else if (typeof item === 'number') {
+        return colorit(item, 'brown');
+    }
+
+    const colorRegex = /^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/g;
+    if (typeof item === 'string' && colorRegex.test(item)) {
+        return colorit(item, item);
+    }
+
+    return JSON.stringify(item);
+}
+
+function colorit(str, color) {
+    return `<span style="color:${color}">${str}</span>`
 }
