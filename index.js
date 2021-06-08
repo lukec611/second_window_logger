@@ -23,6 +23,10 @@ async function main() {
                     hobbies[i % hobbies.length],
                 ],
                 nothing: [],
+                yay: [
+                    { a: true, name: 'a' },
+                    { b: false, name: 'b' },
+                ],
                 favColor: '#ff0000',
                 details: {
                     lastName: 'lincoln',

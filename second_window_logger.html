@@ -5,6 +5,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Second Window Logger</title>
+    <style>
+        .animateLine {
+            animation-name: colorAnim;
+            animation-duration: 300ms;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+        }
+        @keyframes colorAnim {
+            from { background-color: red; }
+            to { background-color: white; }
+        }
+    </style>
 </head>
 <body>
     <div id="out">
