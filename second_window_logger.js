@@ -24,13 +24,11 @@ function toggleCollapse(event) {
     lineGetter.removeRemaining();
 }
 
-let read = false;
 let prevTree = undefined;
 function renderJson(obj) {
     const lineGetter = createLineGetter();
     const root = createTree(obj, undefined, undefined, -1);
     
-    console.log(root.hash());
     draw(lineGetter, root, prevTree, true);
     lineGetter.removeRemaining();
     prevTree = root;
@@ -44,22 +42,15 @@ function draw(lineGetter, x, prev, display) {
     if (l != null) {
         const hashEq = hash === prev?.hash();
         const lineEl = lineGetter.pop();
-        if (display && !futureDisplay) {
-            lineEl.classList.add('collapsed');
-        } else {
-            lineEl.classList.remove('collapsed');
-        }
-        if (!display) {
-            lineEl.style.display = 'none';
-        } else {
-            lineEl.style.display = 'grid';
-        }
+        if (display && !futureDisplay) lineEl.classList.add('collapsed');
+        else lineEl.classList.remove('collapsed');
+
+        lineEl.style.display = display ? 'grid' : 'none';
+        
         if (!hashEq) {
-            if (canCollapse) {
-                lineEl.innerHTML = triangle(hash, 'toggleCollapse(event)');
-            } else {
-                lineEl.innerHTML = '<span class="spacer"></span>';
-            }
+            lineEl.innerHTML = canCollapse
+                ? triangle(hash, 'toggleCollapse(event)')
+                : '<span class="spacer"></span>';
             lineEl.style.paddingLeft = (x.level * 8) + 'px';
             l.forEach(item => {
                 lineEl.innerHTML += `<span class="${item.className}">${item.contents}</span>`;
@@ -76,20 +67,14 @@ function createLineGetter() {
     return {
         pop: () => {
             let el = lineEls.shift();
-            if (el) {
-                return el;
-            }
+            if (el) return el;
+
             el = document.createElement('div');
             el.classList.add('animateLine');
-        
             out.appendChild(el);
             return el;
         },
-        unshift: el => lineEls.unshift(el),
-        removeRemaining: () => {
-            console.log('removing', lineEls.length)
-            lineEls.forEach(el => out.removeChild(el));
-        },
+        removeRemaining: () => lineEls.forEach(el => out.removeChild(el)),
     };
 }
 
@@ -146,27 +131,23 @@ class Node {
         return ['object', 'array', 'map'].includes(this.type);
     }
 
+    childrenCount() {
+        if (this.type === 'array') return this.value.length;
+        if (this.type === 'map') return [...this.value.keys()].length;
+        if (this.type === 'object') return Object.keys(this.value).length;
+    }
+
     getLine() {
-        if (this.key == null) return undefined;
-        if (this.type === 'array') {
-            const numKeys = this.value.length;
-            const contents = numKeys === 0 ? '[]' : str('Array(', numKeys, ')');
-            return [
-                { className: 'key-color', contents: this.key },
-                { className: 'light-color', contents: str(':&nbsp;', contents) },
-            ];
-        }
-        if (this.type === 'map') {
-            const numKeys = [...this.value.keys()].length;
-            const contents = str('Map(', numKeys, ')');
-            return [
-                { className: 'key-color', contents: this.key },
-                { className: 'light-color', contents: str(':&nbsp;', contents) },
-            ];
-        }
-        if (this.type === 'object') {
-            const numKeys = Object.keys(this.value).length;
-            const contents = str('Object(', numKeys, ')');
+        const { key, value } = this; 
+        if (key == null) return undefined;
+        
+        const numChildren = this.childrenCount();
+
+        let contents = undefined;
+        if (this.type === 'array') contents = numChildren === 0 ? '[]' : collectionStr('Array', numChildren);
+        if (this.type === 'map') contents = collectionStr('Map', numChildren);
+        if (this.type === 'object') contents = collectionStr('Object', numChildren);
+        if (contents) {
             return [
                 { className: 'key-color', contents: this.key },
                 { className: 'light-color', contents: str(':&nbsp;', contents) },
@@ -188,9 +169,7 @@ class Node {
                 if (v instanceof Map) return 'map';
                 if (v instanceof Set) return 'set';
                 return 'object';
-            case 'number':
-            case 'boolean':
-            case 'string':
+            default:
                 return type;
         }
     }
@@ -201,3 +180,5 @@ function str(...strs) { return strs.join(''); }
 function triangle(collapseHash, onclick = '') {
     return '<svg data-collapse-hash="' + collapseHash + '" onclick="'+ onclick +'" viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
 }
+
+function collectionStr(name, count) { return str(name, '(', count, ')'); }
