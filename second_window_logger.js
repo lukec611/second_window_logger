@@ -14,8 +14,9 @@ function renderString(str) {
 }
 
 const collapsed = new Set();
-function toggleCollapse(k) {
-    if (collapsed.has(k)) uncollapsed.delete(k);
+function toggleCollapse(event) {
+    const k = event.target.dataset.collapseHash;
+    if (collapsed.has(k)) collapsed.delete(k);
     else collapsed.add(k);
 
     const lineGetter = createLineGetter();
@@ -55,7 +56,7 @@ function draw(lineGetter, x, prev, display) {
         }
         if (!hashEq) {
             if (canCollapse) {
-                lineEl.innerHTML = triangle('toggleCollapse(\''+hash+'\')');
+                lineEl.innerHTML = triangle(hash, 'toggleCollapse(event)');
             } else {
                 lineEl.innerHTML = '<span class="spacer"></span>';
             }
@@ -195,10 +196,8 @@ class Node {
     }
 }
 
-function str(...strs) {
-    return strs.join('');
-}
+function str(...strs) { return strs.join(''); }
 
-function triangle(onclick = '') {
-    return '<svg onclick="'+ onclick +'" viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
+function triangle(collapseHash, onclick = '') {
+    return '<svg data-collapse-hash="' + collapseHash + '" onclick="'+ onclick +'" viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
 }
