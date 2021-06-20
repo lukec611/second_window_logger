@@ -9,61 +9,61 @@ window.parent.addEventListener('message', (event) => {
     }
 });
 
-/**
- * this is what you need:
- * each node knows it's type, it may have a name or an index - it's key
- * a link to a parent
- * it knows it's level
- * it knows it's hash: line number / type / key
- * 
- * 
- * 
- */
-
 function renderString(str) {
     out.innerHTML = str;
 }
 
-const lineHistory = new Map();
+const uncollapsed = new Set([':object:']);
+function toggleCollapse(k) {
+    if (uncollapsed.has(k)) uncollapsed.delete(k);
+    else uncollapsed.add(k);
+    console.log(uncollapsed);
+}
 
 let read = false;
-
+let prevTree = undefined;
 function renderJson(obj) {
     const lineGetter = createLineGetter();
     const root = createTree(obj, undefined, undefined, -1);
-    let lineNo = 0;
-    function draw(x) {
+    function draw(x, prev, display) {
         const l = x.getLine();
+        const canCollapse = x.canCollapse();
+        const hash = x.hash();
+        const futureDisplay = display && (!canCollapse || uncollapsed.has(hash));
         if (l != null) {
+            const hashEq = hash === prev?.hash();
             const lineEl = lineGetter.pop();
-            lineEl.innerHTML = '';
-            lineEl.style.paddingLeft = (x.level * 8) + 'px';
-            l.forEach(item => {
-                lineEl.innerHTML += `<span class="${item.className}">${item.contents}</span>`;
-            });
-            // lineEl.innerHTML = `<span class="line" style="padding-left:${x.level * 8}px;">${triangle()}${l}</span>`
+            if (display && !futureDisplay) {
+                lineEl.classList.add('collapsed');
+            } else {
+                lineEl.classList.remove('collapsed');
+            }
+            if (!display) {
+                lineEl.style.display = 'none';
+            } else {
+                lineEl.style.display = 'grid';
+            }
+            if (!hashEq) {
+                if (canCollapse) {
+                    lineEl.innerHTML = '';
+                    lineEl.innerHTML = triangle(uncollapsed.has(hash), 'toggleCollapse(\''+hash+'\')');
+                } else {
+                    lineEl.innerHTML = '<span class="spacer"></span>';
+                }
+                lineEl.style.paddingLeft = (x.level * 8) + 'px';
+                l.forEach(item => {
+                    lineEl.innerHTML += `<span class="${item.className}">${item.contents}</span>`;
+                });
+                animateElement(lineEl);
+            }
         }
-        x.children.forEach(draw);
+        const prevChildren = prev?.children ?? [];
+        x.children.forEach((child, index) => draw(child, prevChildren[index], futureDisplay));
     }
-    draw(root);
+    console.log(root.hash());
+    draw(root, prevTree, true);
     lineGetter.removeRemaining();
-    // out.style.fontFamily = 'monospace';
-    // let lineNo = 0;
-    
-    // for (const { indentation, v } of toLines(undefined, obj)) {
-    //     const lineEl = lineGetter.pop();
-    //     lineEl.style.border = '1px solid black';
-    //     const history = lineHistory.get(lineNo) ?? { lastUpdated: Date.now() - 5000, v: '', lineEl };
-    //     if (v !== history.v) {
-    //         lineEl.style.paddingLeft = `${indentation*16}px`;
-    //         lineEl.innerHTML = v;
-    //         lineHistory.set(lineNo, { lastUpdated: Date.now(), v });
-    //         animateElement(lineEl);
-    //     }
-    //     lineNo++;
-    // }
-    
-    read = true;
+    prevTree = root;
 }
 
 function createLineGetter() {
@@ -75,7 +75,7 @@ function createLineGetter() {
                 return el;
             }
             el = document.createElement('div');
-            el.className = 'animateLine';
+            el.classList.add('animateLine');
         
             out.appendChild(el);
             return el;
@@ -88,68 +88,12 @@ function createLineGetter() {
     };
 }
 
-function * toLines(key, obj, indentation = 0, prefix2 = '&nbsp;') {
-    if (!read) {
-        console.log(obj, Node.getType(obj));
-    }
-    if (typeof obj !== 'object') {
-        const prefix = key ? `${colorit(key, 'blue')}: ` : '';
-        yield ({ indentation, v: `${prefix2}${prefix}${colorVal(obj)}` });    
-        return;
-    }
-    key && (yield ({ indentation: indentation-1, v: `${prefix2}${colorit(key, 'blue')}:` }));
-    if (Array.isArray(obj)) {
-        for (const item of obj) {
-            yield * toLines(undefined, item, indentation, prefix2);
-        }
-        return;
-    }
-    let first = true;
-    for (const [key, value] of Object.entries(obj)) {
-        const valueType = typeof value;
-        if (valueType === 'object') {
-            if (Array.isArray(value)) {
-                if (value.length)
-                    yield * toLines(key, value, indentation+1, '-');
-                else {
-                    const prefix = key ? `${colorit(key, 'blue')}: ` : '';
-                    yield ({ indentation, v: `${first ? prefix2 : '&nbsp;'}${prefix}${colorVal(value)}` });    
-                }
-            } else {
-                yield * toLines(key, value, indentation+1, first ? prefix2 : undefined);
-            }
-        } else {
-            yield * toLines(key, value, indentation, first ? prefix2 : undefined);
-        }
-        first = false;
-    }
-}
-
 function createTree(obj, parent, key, level = 0) {
     const node = new Node(obj, parent, key, level);
     node.getChildValues().forEach(([k, v]) => {
         node.children.push(createTree(v, node, k, level + 1))
     });
     return node;
-}
-
-function colorVal(item) {
-    if (typeof item === 'boolean') {
-        return colorit(item, item ? 'green' : 'red');
-    } else if (typeof item === 'number') {
-        return colorit(item, 'brown');
-    }
-
-    const colorRegex = /^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/g;
-    if (typeof item === 'string' && colorRegex.test(item)) {
-        return colorit(item, item);
-    }
-
-    return JSON.stringify(item);
-}
-
-function colorit(str, color) {
-    return `<span style="color:${color}">${str}</span>`
 }
 
 function animateElement(el) {
@@ -165,7 +109,6 @@ function isColor(input) {
         return colorit(item, item);
     }
 }
-
 
 class Node {
     constructor(value, parent, key, level = 0) {
@@ -189,9 +132,13 @@ class Node {
         if (this._hash) return this._hash;
         const parentHash = this.parent?.hash() ?? '';
         this._hash = ['object', 'array', 'map'].includes(this.type)
-            ? str(parentHash, ':', this.type)
-            : str(parentHash, ':', JSON.stringify(value));
+            ? str(parentHash, ':', this.type, ':', this.key)
+            : str(parentHash, ':', this.key, ':', JSON.stringify(this.value));
         return this._hash;
+    }
+
+    canCollapse() {
+        return ['object', 'array', 'map'].includes(this.type);
     }
 
     getLine() {
@@ -201,7 +148,7 @@ class Node {
             const contents = numKeys === 0 ? '[]' : str('Array(', numKeys, ')');
             return [
                 { className: 'key-color', contents: this.key },
-                { className: 'light-color', contents: str(': ', contents) },
+                { className: 'light-color', contents: str(':&nbsp;', contents) },
             ];
         }
         if (this.type === 'map') {
@@ -209,7 +156,7 @@ class Node {
             const contents = str('Map(', numKeys, ')');
             return [
                 { className: 'key-color', contents: this.key },
-                { className: 'light-color', contents: str(': ', contents) },
+                { className: 'light-color', contents: str(':&nbsp;', contents) },
             ];
         }
         if (this.type === 'object') {
@@ -217,16 +164,15 @@ class Node {
             const contents = str('Object(', numKeys, ')');
             return [
                 { className: 'key-color', contents: this.key },
-                { className: 'light-color', contents: str(': ', contents) },
+                { className: 'light-color', contents: str(':&nbsp;', contents) },
             ];
         }
 
         return [
             { className: 'key-color', contents: this.key },
-            { className: 'light-color', contents: ': ' },
+            { className: 'light-color', contents: ':&nbsp;' },
             { className: 'type-' + this.type, contents: JSON.stringify(this.value) },
         ];
-        // return this.key + ': ' + JSON.stringify(this.value);
     }
 
     static getType(v) {
@@ -249,7 +195,9 @@ function str(...strs) {
     return strs.join('');
 }
 
-function triangle(down = true) {
+function triangle(down = true, onclick = '') {
     const deg = down ? 180 : 90;
-    return '<svg viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)" style="transform:rotate(' + deg + 'deg); transform-origin:center;" /></svg>';
+    // var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    // const svgEl = document.createElement('svg', );
+    return '<svg onclick="'+ onclick +'" viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
 }

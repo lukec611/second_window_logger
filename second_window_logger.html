@@ -13,14 +13,14 @@
             font-family: "Lucida Grande", sans-serif;
             font-size: 12px;
             background-color: rgb(29 30 33);
-            /* color: rgb(219, 97, 230); */
-            color: rgb(181 191 200);
+            color: rgb(181, 191, 200);
         }
-        .line {
+        .animateLine {
             display: grid;
             grid-auto-flow: column;
             justify-content: start;
             align-items: center;
+            padding-bottom: 2px;
         }
         .animateLine {
             animation-name: colorAnim;
@@ -28,7 +28,14 @@
             animation-iteration-count: 1;
             animation-fill-mode: forwards;
         }
-        svg {
+        .collapsed > svg > polygon {
+            transform: rotate(90deg); 
+        }
+        :not(.collapsed) > svg > polygon {
+            transform: rotate(180deg);
+        }
+        svg > polygon { transform-origin: center center; }
+        svg, .spacer {
             width: 6px;
             padding: 4px;
             height: auto;
