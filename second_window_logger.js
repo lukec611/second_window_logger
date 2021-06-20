@@ -36,7 +36,12 @@ function renderJson(obj) {
         const l = x.getLine();
         if (l != null) {
             const lineEl = lineGetter.pop();
-            lineEl.innerHTML = `<span class="line" style="padding-left:${x.level * 8}px;">${triangle()}${l}</span>`
+            lineEl.innerHTML = '';
+            lineEl.style.paddingLeft = (x.level * 8) + 'px';
+            l.forEach(item => {
+                lineEl.innerHTML += `<span class="${item.className}">${item.contents}</span>`;
+            });
+            // lineEl.innerHTML = `<span class="line" style="padding-left:${x.level * 8}px;">${triangle()}${l}</span>`
         }
         x.children.forEach(draw);
     }
@@ -192,20 +197,36 @@ class Node {
     getLine() {
         if (this.key == null) return undefined;
         if (this.type === 'array') {
-            return this.value.length
-                ? str(this.key ?? '', ': Array(', this.value.length, ')')
-                : str(this.key, ': []');
+            const numKeys = this.value.length;
+            const contents = numKeys === 0 ? '[]' : str('Array(', numKeys, ')');
+            return [
+                { className: 'key-color', contents: this.key },
+                { className: 'light-color', contents: str(': ', contents) },
+            ];
         }
         if (this.type === 'map') {
+            const numKeys = [...this.value.keys()].length;
+            const contents = str('Map(', numKeys, ')');
+            return [
+                { className: 'key-color', contents: this.key },
+                { className: 'light-color', contents: str(': ', contents) },
+            ];
+        }
+        if (this.type === 'object') {
             const numKeys = Object.keys(this.value).length;
-            return numKeys
-                ? str(this.key, ': Map(', numKeys, ')')
-                : str(this.key, ': Map(empty)');
+            const contents = str('Object(', numKeys, ')');
+            return [
+                { className: 'key-color', contents: this.key },
+                { className: 'light-color', contents: str(': ', contents) },
+            ];
         }
-        if (['array', 'object'].includes(this.type)) {
-            return str(this.key, ':');
-        }
-        return this.key + ': ' + JSON.stringify(this.value);
+
+        return [
+            { className: 'key-color', contents: this.key },
+            { className: 'light-color', contents: ': ' },
+            { className: 'type-' + this.type, contents: JSON.stringify(this.value) },
+        ];
+        // return this.key + ': ' + JSON.stringify(this.value);
     }
 
     static getType(v) {
