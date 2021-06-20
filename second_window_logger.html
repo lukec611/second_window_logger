@@ -28,6 +28,14 @@
             animation-iteration-count: 1;
             animation-fill-mode: forwards;
         }
+        .color-copier {
+            width: 10px;
+            height: 10px;
+            margin-left: 4px;
+            box-sizing: border-box;
+            border: 1px solid black;
+        }
+        .color-copier:hover { border: 1px solid rgb(223, 99, 233); }
         .collapsed > svg > polygon {
             transform: rotate(90deg); 
         }
@@ -44,7 +52,7 @@
             from { background-color: rgb(72, 72, 72); }
             to { background-color: unset; }
         }
-        .light-color { color: rgb(206, 206, 206); }
+        .light-color { color: rgba(206, 206, 206, 0.461); }
         .key-color { color: rgb(223, 99, 233); }
         .type-number { color: rgb(142, 117, 255); }
         .type-string { color: rgb(209, 113, 68); }

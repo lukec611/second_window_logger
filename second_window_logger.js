@@ -34,10 +34,18 @@ function renderJson(obj) {
     prevTree = root;
 }
 
-function draw(lineGetter, x, prev, display) {
-    const l = x.getLine();
-    const canCollapse = x.canCollapse();
-    const hash = x.hash();
+function createTree(obj, parent, key, level = 0) {
+    const node = new Node(obj, parent, key, level);
+    node.getChildValues().forEach(([k, v]) => {
+        node.children.push(createTree(v, node, k, level + 1))
+    });
+    return node;
+}
+
+function draw(lineGetter, current, prev, display) {
+    const l = current.getLine();
+    const canCollapse = current.canCollapse();
+    const hash = current.hash();
     const futureDisplay = display && (!canCollapse || !collapsed.has(hash));
     if (l != null) {
         const hashEq = hash === prev?.hash();
@@ -51,15 +59,18 @@ function draw(lineGetter, x, prev, display) {
             lineEl.innerHTML = canCollapse
                 ? triangle(hash, 'toggleCollapse(event)')
                 : '<span class="spacer"></span>';
-            lineEl.style.paddingLeft = (x.level * 8) + 'px';
+            lineEl.style.paddingLeft = (current.level * 8) + 'px';
             l.forEach(item => {
-                lineEl.innerHTML += `<span class="${item.className}">${item.contents}</span>`;
+                lineEl.innerHTML += '<span class="' + item.className + '">' + item.contents + '</span>';
             });
+            if (isColor(current.value)) {
+                lineEl.innerHTML += '<span onclick="copycolor(event)" data-color="' + current.value + '" class="color-copier" style="background-color:' + current.value + ';"></span>';
+            }
             animateElement(lineEl);
         }
     }
     const prevChildren = prev?.children ?? [];
-    x.children.forEach((child, index) => draw(lineGetter, child, prevChildren[index], futureDisplay));
+    current.children.forEach((child, index) => draw(lineGetter, child, prevChildren[index], futureDisplay));
 }
 
 function createLineGetter() {
@@ -78,26 +89,16 @@ function createLineGetter() {
     };
 }
 
-function createTree(obj, parent, key, level = 0) {
-    const node = new Node(obj, parent, key, level);
-    node.getChildValues().forEach(([k, v]) => {
-        node.children.push(createTree(v, node, k, level + 1))
-    });
-    return node;
-}
-
 function animateElement(el) {
     el.classList.remove("animateLine");
     void el.offsetWidth;
     el.classList.add("animateLine");
 }
 
-function isColor(input) {
-    if (typeof input !== 'string') return false;
+function isColor(x) {
+    if (typeof x !== 'string') return false;
     const colorRegex = /^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/g;
-    if (typeof item === 'string' && colorRegex.test(item)) {
-        return colorit(item, item);
-    }
+    return colorRegex.test(x);
 }
 
 class Node {
@@ -138,40 +139,37 @@ class Node {
     }
 
     getLine() {
-        const { key, value } = this; 
+        const { type, key, value } = this; 
         if (key == null) return undefined;
         
         const numChildren = this.childrenCount();
 
         let contents = undefined;
-        if (this.type === 'array') contents = numChildren === 0 ? '[]' : collectionStr('Array', numChildren);
-        if (this.type === 'map') contents = collectionStr('Map', numChildren);
-        if (this.type === 'object') contents = collectionStr('Object', numChildren);
+        if (type === 'array') contents = numChildren === 0 ? '[]' : collectionStr('Array', numChildren);
+        if (type === 'map') contents = collectionStr('Map', numChildren);
+        if (type === 'object') contents = collectionStr('Object', numChildren);
         if (contents) {
             return [
-                { className: 'key-color', contents: this.key },
+                { className: 'key-color', contents: key },
                 { className: 'light-color', contents: str(':&nbsp;', contents) },
             ];
         }
 
         return [
-            { className: 'key-color', contents: this.key },
+            { className: 'key-color', contents: key },
             { className: 'light-color', contents: ':&nbsp;' },
-            { className: 'type-' + this.type, contents: JSON.stringify(this.value) },
+            { className: 'type-' + type, contents: JSON.stringify(value) },
         ];
     }
 
     static getType(v) {
         const type = typeof v;
-        switch (type) {
-            case 'object':
-                if (Array.isArray(v)) return 'array';
-                if (v instanceof Map) return 'map';
-                if (v instanceof Set) return 'set';
-                return 'object';
-            default:
-                return type;
+        if (type === 'object') {
+            if (Array.isArray(v)) return 'array';
+            if (v instanceof Map) return 'map';
+            if (v instanceof Set) return 'set';
         }
+        return type;
     }
 }
 
@@ -182,3 +180,18 @@ function triangle(collapseHash, onclick = '') {
 }
 
 function collectionStr(name, count) { return str(name, '(', count, ')'); }
+
+function copycolor(event) {
+    const color = event.target.dataset.color;
+    copyToClipboard(color);
+}
+
+function copyToClipboard(value) {
+    const tempInput = document.createElement("textarea");
+    tempInput.style = 'position: absolute; left: -1000px; top: -1000px';
+    tempInput.value = value;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand("copy");
+    document.body.removeChild(tempInput);
+}
