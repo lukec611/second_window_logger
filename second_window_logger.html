@@ -12,6 +12,15 @@
             box-sizing: border-box;
             font-family: "Lucida Grande", sans-serif;
             font-size: 12px;
+            background-color: rgb(29 30 33);
+            /* color: rgb(219, 97, 230); */
+            color: rgb(181 191 200);
+        }
+        .line {
+            display: grid;
+            grid-auto-flow: column;
+            justify-content: start;
+            align-items: center;
         }
         .animateLine {
             animation-name: colorAnim;
@@ -19,9 +28,14 @@
             animation-iteration-count: 1;
             animation-fill-mode: forwards;
         }
+        svg {
+            width: 6px;
+            padding: 4px;
+            height: auto;
+        }
         @keyframes colorAnim {
             from { background-color: red; }
-            to { background-color: white; }
+            to { background-color: unset; }
         }
     </style>
 </head>

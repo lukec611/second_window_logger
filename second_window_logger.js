@@ -29,22 +29,22 @@ const lineHistory = new Map();
 let read = false;
 
 function renderJson(obj) {
-    if (!read) {
-        console.log(obj);
-        console.log(obj, Node.getType(obj));
-    }
-    out.innerHTML = '';
+    const lineGetter = createLineGetter();
     const root = createTree(obj, undefined, undefined, -1);
+    let lineNo = 0;
     function draw(x) {
         const l = x.getLine();
-        console.log(x.level)
-        if (l != null) out.innerHTML += `<div style="padding-left:${x.level * 30}px;">${l}</div>`;
+        if (l != null) {
+            const lineEl = lineGetter.pop();
+            lineEl.innerHTML = `<span class="line" style="padding-left:${x.level * 8}px;">${triangle()}${l}</span>`
+        }
         x.children.forEach(draw);
     }
     draw(root);
+    lineGetter.removeRemaining();
     // out.style.fontFamily = 'monospace';
     // let lineNo = 0;
-    // const lineGetter = createLineGetter();
+    
     // for (const { indentation, v } of toLines(undefined, obj)) {
     //     const lineEl = lineGetter.pop();
     //     lineEl.style.border = '1px solid black';
@@ -57,13 +57,12 @@ function renderJson(obj) {
     //     }
     //     lineNo++;
     // }
-    // lineGetter.removeRemaining();
+    
     read = true;
 }
 
 function createLineGetter() {
-    const lineEls = [...out.querySelectorAll('div')];
-    console.log(lineEls);
+    const lineEls = [...out.querySelectorAll('.animateLine')];
     return {
         pop: () => {
             let el = lineEls.shift();
@@ -76,6 +75,7 @@ function createLineGetter() {
             out.appendChild(el);
             return el;
         },
+        unshift: el => lineEls.unshift(el),
         removeRemaining: () => {
             console.log('removing', lineEls.length)
             lineEls.forEach(el => out.removeChild(el));
@@ -170,6 +170,7 @@ class Node {
         this.key = key;
         this.level = level;
         this.children = [];
+        this._hash = undefined;
     }
 
     getChildValues() {
@@ -179,8 +180,17 @@ class Node {
         return [];
     }
 
+    hash() {
+        if (this._hash) return this._hash;
+        const parentHash = this.parent?.hash() ?? '';
+        this._hash = ['object', 'array', 'map'].includes(this.type)
+            ? str(parentHash, ':', this.type)
+            : str(parentHash, ':', JSON.stringify(value));
+        return this._hash;
+    }
+
     getLine() {
-        if (this.key == null) return '';
+        if (this.key == null) return undefined;
         if (this.type === 'array') {
             return this.value.length
                 ? str(this.key ?? '', ': Array(', this.value.length, ')')
@@ -216,4 +226,9 @@ class Node {
 
 function str(...strs) {
     return strs.join('');
+}
+
+function triangle(down = true) {
+    const deg = down ? 180 : 90;
+    return '<svg viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)" style="transform:rotate(' + deg + 'deg); transform-origin:center;" /></svg>';
 }
