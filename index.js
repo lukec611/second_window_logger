@@ -33,6 +33,12 @@ async function main() {
                     isMarried: true,
                     likesBlackOlives: false,
                 },
+                mp: new Map([
+                    ['doc', 'var'],
+                    ['biff', i * 100],
+                    ['marty', i % 2 === 0],
+                ]),
+                np: new Map(),
             },
         };
         popUpWindow.postMessage(v);

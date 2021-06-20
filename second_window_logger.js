@@ -9,30 +9,56 @@ window.parent.addEventListener('message', (event) => {
     }
 });
 
+/**
+ * this is what you need:
+ * each node knows it's type, it may have a name or an index - it's key
+ * a link to a parent
+ * it knows it's level
+ * it knows it's hash: line number / type / key
+ * 
+ * 
+ * 
+ */
+
 function renderString(str) {
     out.innerHTML = str;
 }
 
 const lineHistory = new Map();
 
+let read = false;
+
 function renderJson(obj) {
-    out.style.fontFamily = 'monospace';
-    let lineNo = 0;
-    const lineGetter = createLineGetter();
-    for (const { indentation, v } of toLines(undefined, obj)) {
-        const lineEl = lineGetter.pop();
-        const history = lineHistory.get(lineNo) ?? { lastUpdated: Date.now() - 5000, v: '', lineEl };
-        if (v !== history.v) {
-            lineEl.style.paddingLeft = `${indentation*16}px`;
-            lineEl.innerHTML = v;
-            lineEl.classList.remove("animateLine");
-            void lineEl.offsetWidth;
-            lineHistory.set(lineNo, { lastUpdated: Date.now(), v });
-            lineEl.classList.add("animateLine");
-        }
-        lineNo++;
+    if (!read) {
+        console.log(obj);
+        console.log(obj, Node.getType(obj));
     }
-    lineGetter.removeRemaining();
+    out.innerHTML = '';
+    const root = createTree(obj, undefined, undefined, -1);
+    function draw(x) {
+        const l = x.getLine();
+        console.log(x.level)
+        if (l != null) out.innerHTML += `<div style="padding-left:${x.level * 30}px;">${l}</div>`;
+        x.children.forEach(draw);
+    }
+    draw(root);
+    // out.style.fontFamily = 'monospace';
+    // let lineNo = 0;
+    // const lineGetter = createLineGetter();
+    // for (const { indentation, v } of toLines(undefined, obj)) {
+    //     const lineEl = lineGetter.pop();
+    //     lineEl.style.border = '1px solid black';
+    //     const history = lineHistory.get(lineNo) ?? { lastUpdated: Date.now() - 5000, v: '', lineEl };
+    //     if (v !== history.v) {
+    //         lineEl.style.paddingLeft = `${indentation*16}px`;
+    //         lineEl.innerHTML = v;
+    //         lineHistory.set(lineNo, { lastUpdated: Date.now(), v });
+    //         animateElement(lineEl);
+    //     }
+    //     lineNo++;
+    // }
+    // lineGetter.removeRemaining();
+    read = true;
 }
 
 function createLineGetter() {
@@ -58,6 +84,9 @@ function createLineGetter() {
 }
 
 function * toLines(key, obj, indentation = 0, prefix2 = '&nbsp;') {
+    if (!read) {
+        console.log(obj, Node.getType(obj));
+    }
     if (typeof obj !== 'object') {
         const prefix = key ? `${colorit(key, 'blue')}: ` : '';
         yield ({ indentation, v: `${prefix2}${prefix}${colorVal(obj)}` });    
@@ -91,6 +120,14 @@ function * toLines(key, obj, indentation = 0, prefix2 = '&nbsp;') {
     }
 }
 
+function createTree(obj, parent, key, level = 0) {
+    const node = new Node(obj, parent, key, level);
+    node.getChildValues().forEach(([k, v]) => {
+        node.children.push(createTree(v, node, k, level + 1))
+    });
+    return node;
+}
+
 function colorVal(item) {
     if (typeof item === 'boolean') {
         return colorit(item, item ? 'green' : 'red');
@@ -108,4 +145,75 @@ function colorVal(item) {
 
 function colorit(str, color) {
     return `<span style="color:${color}">${str}</span>`
+}
+
+function animateElement(el) {
+    el.classList.remove("animateLine");
+    void el.offsetWidth;
+    el.classList.add("animateLine");
+}
+
+function isColor(input) {
+    if (typeof input !== 'string') return false;
+    const colorRegex = /^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/g;
+    if (typeof item === 'string' && colorRegex.test(item)) {
+        return colorit(item, item);
+    }
+}
+
+
+class Node {
+    constructor(value, parent, key, level = 0) {
+        this.value = value;
+        this.type = Node.getType(value);
+        this.parent = parent;
+        this.key = key;
+        this.level = level;
+        this.children = [];
+    }
+
+    getChildValues() {
+        if (this.type === 'object') return [...Object.entries(this.value)];
+        if (this.type === 'array') return this.value.map((v, k) => [k, v]);
+        if (this.type === 'map') return [...this.value.entries()];
+        return [];
+    }
+
+    getLine() {
+        if (this.key == null) return '';
+        if (this.type === 'array') {
+            return this.value.length
+                ? str(this.key ?? '', ': Array(', this.value.length, ')')
+                : str(this.key, ': []');
+        }
+        if (this.type === 'map') {
+            const numKeys = Object.keys(this.value).length;
+            return numKeys
+                ? str(this.key, ': Map(', numKeys, ')')
+                : str(this.key, ': Map(empty)');
+        }
+        if (['array', 'object'].includes(this.type)) {
+            return str(this.key, ':');
+        }
+        return this.key + ': ' + JSON.stringify(this.value);
+    }
+
+    static getType(v) {
+        const type = typeof v;
+        switch (type) {
+            case 'object':
+                if (Array.isArray(v)) return 'array';
+                if (v instanceof Map) return 'map';
+                if (v instanceof Set) return 'set';
+                return 'object';
+            case 'number':
+            case 'boolean':
+            case 'string':
+                return type;
+        }
+    }
+}
+
+function str(...strs) {
+    return strs.join('');
 }
