@@ -13,10 +13,10 @@ function renderString(str) {
     out.innerHTML = str;
 }
 
-const uncollapsed = new Set([':object:']);
+const collapsed = new Set();
 function toggleCollapse(k) {
-    if (uncollapsed.has(k)) uncollapsed.delete(k);
-    else uncollapsed.add(k);
+    if (collapsed.has(k)) uncollapsed.delete(k);
+    else collapsed.add(k);
 
     const lineGetter = createLineGetter();
     draw(lineGetter, prevTree, prevTree, true);
@@ -39,7 +39,7 @@ function draw(lineGetter, x, prev, display) {
     const l = x.getLine();
     const canCollapse = x.canCollapse();
     const hash = x.hash();
-    const futureDisplay = display && (!canCollapse || uncollapsed.has(hash));
+    const futureDisplay = display && (!canCollapse || !collapsed.has(hash));
     if (l != null) {
         const hashEq = hash === prev?.hash();
         const lineEl = lineGetter.pop();
@@ -56,7 +56,7 @@ function draw(lineGetter, x, prev, display) {
         if (!hashEq) {
             if (canCollapse) {
                 lineEl.innerHTML = '';
-                lineEl.innerHTML = triangle(uncollapsed.has(hash), 'toggleCollapse(\''+hash+'\')');
+                lineEl.innerHTML = triangle(!collapsed.has(hash), 'toggleCollapse(\''+hash+'\')');
             } else {
                 lineEl.innerHTML = '<span class="spacer"></span>';
             }
