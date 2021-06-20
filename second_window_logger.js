@@ -55,8 +55,7 @@ function draw(lineGetter, x, prev, display) {
         }
         if (!hashEq) {
             if (canCollapse) {
-                lineEl.innerHTML = '';
-                lineEl.innerHTML = triangle(!collapsed.has(hash), 'toggleCollapse(\''+hash+'\')');
+                lineEl.innerHTML = triangle('toggleCollapse(\''+hash+'\')');
             } else {
                 lineEl.innerHTML = '<span class="spacer"></span>';
             }
@@ -200,9 +199,6 @@ function str(...strs) {
     return strs.join('');
 }
 
-function triangle(down = true, onclick = '') {
-    const deg = down ? 180 : 90;
-    // var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    // const svgEl = document.createElement('svg', );
+function triangle(onclick = '') {
     return '<svg onclick="'+ onclick +'" viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
 }
