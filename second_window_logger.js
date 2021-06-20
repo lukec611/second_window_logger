@@ -17,7 +17,10 @@ const uncollapsed = new Set([':object:']);
 function toggleCollapse(k) {
     if (uncollapsed.has(k)) uncollapsed.delete(k);
     else uncollapsed.add(k);
-    console.log(uncollapsed);
+
+    const lineGetter = createLineGetter();
+    draw(lineGetter, prevTree, prevTree, true);
+    lineGetter.removeRemaining();
 }
 
 let read = false;
@@ -25,45 +28,47 @@ let prevTree = undefined;
 function renderJson(obj) {
     const lineGetter = createLineGetter();
     const root = createTree(obj, undefined, undefined, -1);
-    function draw(x, prev, display) {
-        const l = x.getLine();
-        const canCollapse = x.canCollapse();
-        const hash = x.hash();
-        const futureDisplay = display && (!canCollapse || uncollapsed.has(hash));
-        if (l != null) {
-            const hashEq = hash === prev?.hash();
-            const lineEl = lineGetter.pop();
-            if (display && !futureDisplay) {
-                lineEl.classList.add('collapsed');
-            } else {
-                lineEl.classList.remove('collapsed');
-            }
-            if (!display) {
-                lineEl.style.display = 'none';
-            } else {
-                lineEl.style.display = 'grid';
-            }
-            if (!hashEq) {
-                if (canCollapse) {
-                    lineEl.innerHTML = '';
-                    lineEl.innerHTML = triangle(uncollapsed.has(hash), 'toggleCollapse(\''+hash+'\')');
-                } else {
-                    lineEl.innerHTML = '<span class="spacer"></span>';
-                }
-                lineEl.style.paddingLeft = (x.level * 8) + 'px';
-                l.forEach(item => {
-                    lineEl.innerHTML += `<span class="${item.className}">${item.contents}</span>`;
-                });
-                animateElement(lineEl);
-            }
-        }
-        const prevChildren = prev?.children ?? [];
-        x.children.forEach((child, index) => draw(child, prevChildren[index], futureDisplay));
-    }
+    
     console.log(root.hash());
-    draw(root, prevTree, true);
+    draw(lineGetter, root, prevTree, true);
     lineGetter.removeRemaining();
     prevTree = root;
+}
+
+function draw(lineGetter, x, prev, display) {
+    const l = x.getLine();
+    const canCollapse = x.canCollapse();
+    const hash = x.hash();
+    const futureDisplay = display && (!canCollapse || uncollapsed.has(hash));
+    if (l != null) {
+        const hashEq = hash === prev?.hash();
+        const lineEl = lineGetter.pop();
+        if (display && !futureDisplay) {
+            lineEl.classList.add('collapsed');
+        } else {
+            lineEl.classList.remove('collapsed');
+        }
+        if (!display) {
+            lineEl.style.display = 'none';
+        } else {
+            lineEl.style.display = 'grid';
+        }
+        if (!hashEq) {
+            if (canCollapse) {
+                lineEl.innerHTML = '';
+                lineEl.innerHTML = triangle(uncollapsed.has(hash), 'toggleCollapse(\''+hash+'\')');
+            } else {
+                lineEl.innerHTML = '<span class="spacer"></span>';
+            }
+            lineEl.style.paddingLeft = (x.level * 8) + 'px';
+            l.forEach(item => {
+                lineEl.innerHTML += `<span class="${item.className}">${item.contents}</span>`;
+            });
+            animateElement(lineEl);
+        }
+    }
+    const prevChildren = prev?.children ?? [];
+    x.children.forEach((child, index) => draw(lineGetter, child, prevChildren[index], futureDisplay));
 }
 
 function createLineGetter() {
