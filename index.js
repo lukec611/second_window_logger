@@ -4,8 +4,8 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 async function main() {
     const popUpWindow = window.open('./second_window_logger.html', '_blank', 'height=500,width=500');
 
-    await delay(1000);
-
+    await new Promise(r => popUpWindow.onload = r);
+    
     const hobbies = ['cooking', 'brunch', 'dirt bike'];
 
     for (let i = 0; i < 100; i++) {
