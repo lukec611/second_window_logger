@@ -54,9 +54,10 @@ function draw(container, current, prev, display) {
     const containerChildren = [...container.children];
     if (containerChildren.length !== 2) {
         containerChildren.forEach(c => container.removeChild(c));
-        lineEl = document.createElement('div')
+        lineEl = document.createElement('div');
         lineEl.classList.add('animateLine');
-        childrenContainer = document.createElement('div')
+        childrenContainer = document.createElement('div');
+        childrenContainer.style.paddingLeft = '8px';
         container.appendChild(lineEl);
         container.appendChild(childrenContainer);
     } else {
@@ -73,7 +74,6 @@ function draw(container, current, prev, display) {
         lineEl.innerHTML = canCollapse
             ? triangle(hash, 'toggleCollapse(event)')
             : '<span class="spacer"></span>';
-        lineEl.style.paddingLeft = (current.level * 8) + 'px';
         l.forEach(item => {
             lineEl.innerHTML += '<span class="' + item.className + '">' + item.contents + '</span>';
         });
@@ -88,7 +88,7 @@ function draw(container, current, prev, display) {
     current.children.forEach((child, index) => {
         let childContainer = childContainers.shift();
         if (!childContainer) {
-            childContainer = document.createElement('div')
+            childContainer = document.createElement('div');
             childrenContainer.appendChild(childContainer);
         }
         draw(childContainer, child, prevChildren[index], futureDisplay);
