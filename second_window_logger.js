@@ -80,6 +80,10 @@ function draw(container, current, prev) {
         });
         if (isColor(current.value)) {
             content.innerHTML += '<span onclick="copycolor(event)" data-color="' + current.value + '" class="color-copier" style="background-color:' + current.value + ';"></span>';
+        } else if (canCollapse) {
+            const copyBtn = copyButton();
+            copyBtn.onclick = () => current.copyToClipboard();
+            content.appendChild(copyBtn);
         }
         animateElement(lineEl);
     }
@@ -170,6 +174,10 @@ class Node {
         ];
     }
 
+    copyToClipboard() {
+        copyToClipboard(JSON.stringify(this.value, simplifyComplexTypes, 2));
+    }
+
     static getType(v) {
         const type = typeof v;
         if (type === 'object') {
@@ -186,8 +194,22 @@ function str(...strs) { return strs.join(''); }
 function collapseButton() {
     const collapseArrow = '<svg viewBox="0 0 10 10"><polygon style="transform-origin:center;transform:rotate(180deg);" points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
     const button = document.createElement('button');
-    button.className = 'collapseButton';
+    button.className = 'action-btn';
     button.innerHTML = collapseArrow;
+    return button;
+}
+
+function copyButton() {
+    const copyIcon = [
+        '<div style="border:1px solid rgba(206, 206, 206, 0.461);width:6px;height:6px;position:absolute;top:1px;left:1px;"></div>',
+        '<div style="border:1px solid rgba(206, 206, 206, 0.461);width:6px;height:6px;position:absolute;top:4px;left:4px;"></div>',
+    ].join('');
+    const button = document.createElement('button');
+    button.className = 'action-btn';
+    button.style.position = 'relative';
+    button.innerHTML = copyIcon;
+    button.onmouseover = () => [...button.children].forEach(c => c.style.borderColor = 'white');
+    button.onmouseout = () => [...button.children].forEach(c => c.style.borderColor = 'rgba(206, 206, 206, 0.461)');
     return button;
 }
 
@@ -206,6 +228,13 @@ function copyToClipboard(value) {
     tempInput.select();
     document.execCommand("copy");
     document.body.removeChild(tempInput);
+}
+
+function simplifyComplexTypes(key, value) {
+    if(value instanceof Map) {
+      return { dataType: 'Map', entries: Array.from(value.entries()) };
+    } else if (value instanceof Set) return { dataType: 'set', items: [...value] };
+    return value;
 }
 
 function escapeHtml(unsafe = '') {
