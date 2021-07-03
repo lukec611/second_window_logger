@@ -123,9 +123,9 @@ class Node {
     }
 
     getChildValues() {
-        if (this.type === 'object') return [...Object.entries(this.value)];
+        if (this.type === 'object') return [...Object.entries(this.value)].sort(([a], [b]) => a.localeCompare(b));
         if (this.type === 'array') return this.value.map((v, k) => [k, v]);
-        if (this.type === 'map') return [...this.value.entries()];
+        if (this.type === 'map') return [...this.value.entries()].sort(([a], [b]) => a.localeCompare(b));
         return [];
     }
 
