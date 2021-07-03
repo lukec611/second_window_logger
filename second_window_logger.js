@@ -55,7 +55,7 @@ function draw(container, current, prev, display) {
     if (containerChildren.length !== 2) {
         containerChildren.forEach(c => container.removeChild(c));
         lineEl = document.createElement('div');
-        lineEl.classList.add('animateLine');
+        lineEl.className = 'animated-line';
         childrenContainer = document.createElement('div');
         childrenContainer.style.paddingLeft = '8px';
         container.appendChild(lineEl);
@@ -73,6 +73,7 @@ function draw(container, current, prev, display) {
     if (!hashEq) {
         lineEl.innerHTML = '';
         const content = document.createElement('div');
+        content.classList.add('display-line');
         if (canCollapse) {
             const btn = collapseButton(hash);
             btn.onclick = () => {
@@ -112,9 +113,9 @@ function draw(container, current, prev, display) {
 }
 
 function animateElement(el) {
-    el.classList.remove("animateLine");
+    el.classList.remove("animated-line");
     void el.offsetWidth;
-    el.classList.add("animateLine");
+    el.classList.add("animated-line");
 }
 
 function isColor(x) {
