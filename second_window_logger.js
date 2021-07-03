@@ -199,7 +199,7 @@ class Node {
 function str(...strs) { return strs.join(''); }
 
 function collapseButton(collapseHash) {
-    const collapseArrow = '<svg data-collapse-hash="' + collapseHash + '" viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
+    const collapseArrow = '<svg data-collapse-hash="' + collapseHash + '" viewBox="0 0 10 10"><polygon style="transform-origin:center;transform:rotate(180deg);" points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
     const button = document.createElement('button');
     button.className = 'collapseButton';
     button.innerHTML = collapseArrow;
