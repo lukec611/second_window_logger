@@ -13,15 +13,6 @@ function renderString(str) {
     out.innerHTML = str;
 }
 
-const collapsed = new Set();
-function toggleCollapse(event) {
-    const k = event.target.dataset.collapseHash;
-    if (collapsed.has(k)) collapsed.delete(k);
-    else collapsed.add(k);
-
-    render(prevTree);
-}
-
 let prevTree = undefined;
 function renderJson(obj) {
     const root = createTree(obj, undefined, undefined, -1);
@@ -42,11 +33,10 @@ function createTree(obj, parent, key, level = 0) {
     return node;
 }
 
-function draw(container, current, prev, display) {
+function draw(container, current, prev) {
     const l = current.getLine();
     const canCollapse = current.canCollapse();
     const hash = current.hash();
-    const futureDisplay = display && (!canCollapse || !collapsed.has(hash));
     const hashEq = hash === prev?.hash();
 
     let lineEl;
@@ -64,11 +54,6 @@ function draw(container, current, prev, display) {
         lineEl = containerChildren[0];
         childrenContainer = containerChildren[1];
     }
-    
-    if (display && !futureDisplay) lineEl.classList.add('collapsed');
-    else lineEl.classList.remove('collapsed');
-
-    lineEl.style.display = display ? 'grid' : 'none';
     
     if (!hashEq) {
         lineEl.innerHTML = '';
@@ -107,7 +92,7 @@ function draw(container, current, prev, display) {
             childContainer = document.createElement('div');
             childrenContainer.appendChild(childContainer);
         }
-        draw(childContainer, child, prevChildren[index], futureDisplay);
+        draw(childContainer, child, prevChildren[index]);
     });
     childContainers.forEach(c => childrenContainer.removeChild(c));
 }
@@ -154,13 +139,14 @@ class Node {
     }
 
     canCollapse() {
-        return ['object', 'array', 'map'].includes(this.type);
+        return ['object', 'array', 'map'].includes(this.type) && this.childrenCount() !== 0;
     }
 
     childrenCount() {
         if (this.type === 'array') return this.value.length;
         if (this.type === 'map') return [...this.value.keys()].length;
         if (this.type === 'object') return Object.keys(this.value).length;
+
     }
 
     getLine() {
@@ -198,8 +184,8 @@ class Node {
 
 function str(...strs) { return strs.join(''); }
 
-function collapseButton(collapseHash) {
-    const collapseArrow = '<svg data-collapse-hash="' + collapseHash + '" viewBox="0 0 10 10"><polygon style="transform-origin:center;transform:rotate(180deg);" points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
+function collapseButton() {
+    const collapseArrow = '<svg viewBox="0 0 10 10"><polygon style="transform-origin:center;transform:rotate(180deg);" points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
     const button = document.createElement('button');
     button.className = 'collapseButton';
     button.innerHTML = collapseArrow;
