@@ -19,18 +19,18 @@ function toggleCollapse(event) {
     if (collapsed.has(k)) collapsed.delete(k);
     else collapsed.add(k);
 
-    const lineGetter = createLineGetter();
-    draw(lineGetter, prevTree, prevTree, true);
-    lineGetter.removeRemaining();
+    render(prevTree);
 }
 
 let prevTree = undefined;
 function renderJson(obj) {
-    const lineGetter = createLineGetter();
     const root = createTree(obj, undefined, undefined, -1);
-    
-    draw(lineGetter, root, prevTree, true);
-    lineGetter.removeRemaining();
+    render(root);
+}
+
+function render(root) {
+    const outEl = document.querySelector('#out');
+    draw(outEl, root, prevTree, true);
     prevTree = root;
 }
 
@@ -42,51 +42,63 @@ function createTree(obj, parent, key, level = 0) {
     return node;
 }
 
-function draw(lineGetter, current, prev, display) {
+function draw(container, current, prev, display) {
     const l = current.getLine();
     const canCollapse = current.canCollapse();
     const hash = current.hash();
     const futureDisplay = display && (!canCollapse || !collapsed.has(hash));
-    if (l != null) {
-        const hashEq = hash === prev?.hash();
-        const lineEl = lineGetter.pop();
-        if (display && !futureDisplay) lineEl.classList.add('collapsed');
-        else lineEl.classList.remove('collapsed');
+    const hashEq = hash === prev?.hash();
 
-        lineEl.style.display = display ? 'grid' : 'none';
-        
-        if (!hashEq) {
-            lineEl.innerHTML = canCollapse
-                ? triangle(hash, 'toggleCollapse(event)')
-                : '<span class="spacer"></span>';
-            lineEl.style.paddingLeft = (current.level * 8) + 'px';
-            l.forEach(item => {
-                lineEl.innerHTML += '<span class="' + item.className + '">' + item.contents + '</span>';
-            });
-            if (isColor(current.value)) {
-                lineEl.innerHTML += '<span onclick="copycolor(event)" data-color="' + current.value + '" class="color-copier" style="background-color:' + current.value + ';"></span>';
-            }
-            animateElement(lineEl);
+    // html management
+    let lineEl;
+    let childrenContainer;
+    const containerChildren = [...container.children];
+    if (containerChildren.length !== 2) {
+        containerChildren.forEach(c => container.removeChild(c));
+        lineEl = createLine();
+        lineEl.classList.add('animateLine');
+        childrenContainer = createLine();
+        container.appendChild(lineEl);
+        container.appendChild(childrenContainer);
+    } else {
+        lineEl = containerChildren[0];
+        childrenContainer = containerChildren[1];
+    }
+    
+    if (display && !futureDisplay) lineEl.classList.add('collapsed');
+    else lineEl.classList.remove('collapsed');
+
+    lineEl.style.display = display ? 'grid' : 'none';
+    
+    if (!hashEq) {
+        lineEl.innerHTML = canCollapse
+            ? triangle(hash, 'toggleCollapse(event)')
+            : '<span class="spacer"></span>';
+        lineEl.style.paddingLeft = (current.level * 8) + 'px';
+        l.forEach(item => {
+            lineEl.innerHTML += '<span class="' + item.className + '">' + item.contents + '</span>';
+        });
+        if (isColor(current.value)) {
+            lineEl.innerHTML += '<span onclick="copycolor(event)" data-color="' + current.value + '" class="color-copier" style="background-color:' + current.value + ';"></span>';
         }
+        animateElement(lineEl);
     }
     const prevChildren = prev?.children ?? [];
-    current.children.forEach((child, index) => draw(lineGetter, child, prevChildren[index], futureDisplay));
+    const childContainers = [...childrenContainer.children];
+    current.children.forEach((child, index) => {
+        let childContainer = childContainers.shift();
+        if (!childContainer) {
+            childContainer = createLine();
+            childrenContainer.appendChild(childContainer);
+        }
+        draw(childContainer, child, prevChildren[index], futureDisplay);
+    });
+    childContainers.forEach(c => childrenContainer.removeChild(c));
 }
 
-function createLineGetter() {
-    const lineEls = [...out.querySelectorAll('.animateLine')];
-    return {
-        pop: () => {
-            let el = lineEls.shift();
-            if (el) return el;
-
-            el = document.createElement('div');
-            el.classList.add('animateLine');
-            out.appendChild(el);
-            return el;
-        },
-        removeRemaining: () => lineEls.forEach(el => out.removeChild(el)),
-    };
+function createLine() {
+    const el = document.createElement('div');
+    return el;
 }
 
 function animateElement(el) {
@@ -102,9 +114,11 @@ function isColor(x) {
 }
 
 class Node {
-    constructor(value, parent, key, level = 0) {
-        this.value = value;
+    constructor(value, parent, key = 'root', level = 0) {
         this.type = Node.getType(value);
+        this.value = this.type === 'array'
+            ? value.filter(x => x)
+            : value;
         this.parent = parent;
         this.key = key;
         this.level = level;
@@ -140,8 +154,6 @@ class Node {
 
     getLine() {
         const { type, key, value } = this; 
-        if (key == null) return undefined;
-        
         const numChildren = this.childrenCount();
 
         let contents = undefined;
