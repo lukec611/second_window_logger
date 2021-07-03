@@ -1,5 +1,7 @@
 const out = document.querySelector('#out');
 
+window.parent.postMessage('ready');
+
 window.parent.addEventListener('message', (event) => {
     const { data } = event;
     if (data.type === 'string') {
