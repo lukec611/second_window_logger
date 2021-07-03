@@ -49,15 +49,14 @@ function draw(container, current, prev, display) {
     const futureDisplay = display && (!canCollapse || !collapsed.has(hash));
     const hashEq = hash === prev?.hash();
 
-    // html management
     let lineEl;
     let childrenContainer;
     const containerChildren = [...container.children];
     if (containerChildren.length !== 2) {
         containerChildren.forEach(c => container.removeChild(c));
-        lineEl = createLine();
+        lineEl = document.createElement('div')
         lineEl.classList.add('animateLine');
-        childrenContainer = createLine();
+        childrenContainer = document.createElement('div')
         container.appendChild(lineEl);
         container.appendChild(childrenContainer);
     } else {
@@ -83,22 +82,18 @@ function draw(container, current, prev, display) {
         }
         animateElement(lineEl);
     }
+
     const prevChildren = prev?.children ?? [];
     const childContainers = [...childrenContainer.children];
     current.children.forEach((child, index) => {
         let childContainer = childContainers.shift();
         if (!childContainer) {
-            childContainer = createLine();
+            childContainer = document.createElement('div')
             childrenContainer.appendChild(childContainer);
         }
         draw(childContainer, child, prevChildren[index], futureDisplay);
     });
     childContainers.forEach(c => childrenContainer.removeChild(c));
-}
-
-function createLine() {
-    const el = document.createElement('div');
-    return el;
 }
 
 function animateElement(el) {
