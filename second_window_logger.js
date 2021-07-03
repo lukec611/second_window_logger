@@ -55,7 +55,7 @@ function draw(container, current, prev) {
         childrenContainer = containerChildren[1];
     }
     
-    if (!hashEq) {
+    if (!hashEq || current.childrenCount() !== prev?.childrenCount()) {
         lineEl.innerHTML = '';
         const content = document.createElement('div');
         content.classList.add('display-line');
@@ -146,7 +146,6 @@ class Node {
         if (this.type === 'array') return this.value.length;
         if (this.type === 'map') return [...this.value.keys()].length;
         if (this.type === 'object') return Object.keys(this.value).length;
-
     }
 
     getLine() {
