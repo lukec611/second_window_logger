@@ -71,14 +71,29 @@ function draw(container, current, prev, display) {
     lineEl.style.display = display ? 'grid' : 'none';
     
     if (!hashEq) {
-        lineEl.innerHTML = canCollapse
-            ? triangle(hash, 'toggleCollapse(event)')
-            : '<span class="spacer"></span>';
+        lineEl.innerHTML = '';
+        const content = document.createElement('div');
+        if (canCollapse) {
+            const btn = collapseButton(hash);
+            btn.onclick = () => {
+                const shouldCollapse = childrenContainer.style.display !== 'none';
+                childrenContainer.style.display = shouldCollapse ? 'none' : 'block';
+                const poly = lineEl.querySelector('polygon');
+                if (poly) poly.style.transform = shouldCollapse ? 'rotate(90deg)' : 'rotate(180deg)';
+            };
+            lineEl.appendChild(btn);
+        } else {
+            const spacer = document.createElement('span');
+            spacer.className = 'spacer';
+            lineEl.appendChild(spacer);
+        }
+        lineEl.appendChild(content);
+        
         l.forEach(item => {
-            lineEl.innerHTML += '<span class="' + item.className + '">' + item.contents + '</span>';
+            content.innerHTML += '<span class="' + item.className + '">' + item.contents + '</span>';
         });
         if (isColor(current.value)) {
-            lineEl.innerHTML += '<span onclick="copycolor(event)" data-color="' + current.value + '" class="color-copier" style="background-color:' + current.value + ';"></span>';
+            content.innerHTML += '<span onclick="copycolor(event)" data-color="' + current.value + '" class="color-copier" style="background-color:' + current.value + ';"></span>';
         }
         animateElement(lineEl);
     }
@@ -182,8 +197,12 @@ class Node {
 
 function str(...strs) { return strs.join(''); }
 
-function triangle(collapseHash, onclick = '') {
-    return '<svg data-collapse-hash="' + collapseHash + '" onclick="'+ onclick +'" viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
+function collapseButton(collapseHash) {
+    const collapseArrow = '<svg data-collapse-hash="' + collapseHash + '" viewBox="0 0 10 10"><polygon points="0,10 10,10 5,0" fill="rgb(181 191 200)"/></svg>';
+    const button = document.createElement('button');
+    button.className = 'collapseButton';
+    button.innerHTML = collapseArrow;
+    return button;
 }
 
 function collectionStr(name, count) { return str(name, '(', count, ')'); }
