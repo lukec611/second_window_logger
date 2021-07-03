@@ -166,7 +166,7 @@ class Node {
         return [
             { className: 'key-color', contents: key },
             { className: 'light-color', contents: ':&nbsp;' },
-            { className: 'type-' + type, contents: JSON.stringify(value) },
+            { className: 'type-' + type, contents: escapeHtml(JSON.stringify(value)) },
         ];
     }
 
@@ -207,3 +207,12 @@ function copyToClipboard(value) {
     document.execCommand("copy");
     document.body.removeChild(tempInput);
 }
+
+function escapeHtml(unsafe = '') {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+ }
