@@ -84,7 +84,11 @@ function draw(container, current, prev) {
             content.innerHTML += '<span onclick="copycolor(event)" data-color="' + current.value + '" class="color-copier" style="background-color:' + current.value + ';"></span>';
         } else if (canCollapse) {
             const copyBtn = copyButton();
-            copyBtn.onclick = () => current.copyToClipboard();
+            copyBtn.onclick = () => {
+                // note we cannot use current, since it may not be updated
+                const maybeNode = prevTree.findByHash(hash);
+                maybeNode?.copyToClipboard();
+            };
             content.appendChild(copyBtn);
         }
         animateElement(lineEl);
@@ -174,6 +178,22 @@ class Node {
             { className: 'light-color', contents: ':&nbsp;' },
             { className: 'type-' + type, contents: escapeHtml(JSON.stringify(value)) },
         ];
+    }
+
+    findByHash(hash) {
+        let foundNode = undefined;
+        function search(current) {
+            if (foundNode) return;
+            if (hash === current.hash()) {
+                foundNode = current;
+                return;
+            }
+            current.children.forEach(child => {
+                if (foundNode) return;
+                search(child);
+            });
+        }
+        search(this);
     }
 
     copyToClipboard() {
