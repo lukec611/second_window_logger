@@ -21,6 +21,7 @@ async function main() {
         const v ={
             type: 'json',
             value: {
+                nanny: undefined,
                 name: 'luke',
                 age: 30 + i,
                 nothing: [],

@@ -21,7 +21,7 @@ function renderJson(obj) {
 
 function render(root) {
     const outEl = document.querySelector('#out');
-    draw(outEl, root, prevTree, true);
+    draw(outEl, root, prevTree);
     prevTree = root;
 }
 
@@ -121,7 +121,7 @@ class Node {
     constructor(value, parent, key = 'root', level = 0) {
         this.type = Node.getType(value);
         this.value = this.type === 'array'
-            ? value.filter(x => x)
+            ? value.filter(x => x) // remove tombstones
             : value;
         this.parent = parent;
         this.key = key;
@@ -174,7 +174,7 @@ class Node {
         return [
             { className: 'key-color', contents: key },
             { className: 'light-color', contents: ':&nbsp;' },
-            { className: 'type-' + type, contents: escapeHtml(JSON.stringify(value)) },
+            { className: 'type-' + type, contents: escapeHtml(JSON.stringify(value) ?? 'undefined') },
         ];
     }
 
